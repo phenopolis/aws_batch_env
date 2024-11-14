@@ -1,0 +1,20 @@
+{
+  "jobName": "sentieon-job",
+  "timeout": {"attemptDurationSeconds": 3600},
+  "containerOverrides": {
+    "environment": [
+        {
+          "name": "PIPELINE_URL",
+          "value": "https://github.com/ucl-medical-genomics/sentieon-nf"
+        },
+        {
+          "name": "NF_SCRIPT",
+          "value": "main.nf"
+        },
+        {
+          "name": "NF_OPTS",
+          "value": "--sample_sheet s3://pgp650/aws_input.csv --ref s3://pgp650/Homo_sapiens_assembly38.fasta --ref_index s3://pgp650/ref_index --dbsnp s3://pgp650/dbsnp_146.hg38.vcf.gz --dbsnp_index s3://pgp650/dbsnp_146.hg38.vcf.gz.tbi --readgroups @RG\\tID:HG002-1\\tSM:HG002\\tLB:HG002-LB-1\\tPL:ILLUMINA --model s3://pgp650/SentieonIlluminaWGS2.2.bundle --sentieon_license s3://pgp650/UCL_eval.lic.txt --output_dir s3://pgp650/out/1 -work-dir s3://nextflow-work-dir/1"
+        }
+    ]
+  }
+}

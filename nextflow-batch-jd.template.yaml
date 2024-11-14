@@ -9,29 +9,26 @@ Metadata:
           default: "AWS Batch Job Definition Config"
         Parameters:
         - NFJobQueue
-        - BucketNameResults
         - ImageId
         - ECSRoleArn
         - AWSRegion
+        - BaseName
     ParameterLabels:
       NFJobQueue:
         default: AWS Batch Job Queue name to execute Nextflow jobs
-      BucketNameResults:
-        default: Amazon S3 bucket name to store Nextflow results
       ImageId:
-        default: ECR Repo name
+        default: ECR Repo name to run the Nextflow run command
       ECSRoleArn:
         default: ECS Task Execution Role Arn
       AWSRegion:
         default: AWS Region the job is running in
+      BaseName:
+        default: Base Name
 
 Parameters:
   NFJobQueue:
     Type: String
     Description: 'The name of the AWS Batch Job Queue to execute Nextflow jobs'
-  BucketNameResults:
-    Type: String
-    Description: 'The name of the Amazon S3 bucket name to store Nextflow results.'
   ImageId:
     Type: String
     Description: 'The name of the ECR repo'
@@ -41,13 +38,17 @@ Parameters:
   AWSRegion:
     Type: String
     Description: 'AWS Region the job is running in'
+  BaseName:
+    Type: String
+    Description: Name used for the different components
+    Default: nextflow
 
 Resources:
   JobDefinition:
     Type: AWS::Batch::JobDefinition
     Properties:
       Type: container
-      JobDefinitionName: nextflow-demo
+      JobDefinitionName: !Sub ${BaseName}-job-definition
       ContainerProperties:
         Image: !Ref ImageId
         ResourceRequirements:
@@ -62,15 +63,9 @@ Resources:
         - Name: PIPELINE_URL
           Value: https://github.com/seqeralabs/nextflow-tutorial
         - Name: NF_SCRIPT
-          Value: script7.nf
-        - Name: NXF_DEFAULT_DSL
-          Value: 1
-        - Name: BUCKET_NAME_RESULTS
-          Value: !Ref BucketNameResults
+          Value: main.nf
         - Name: NF_JOB_QUEUE
           Value: !Ref NFJobQueue
-        - Name: NXF_VER
-          Value: 22.10.8
         - Name: AWS_REGION
           Value: !Ref AWSRegion
       Timeout:

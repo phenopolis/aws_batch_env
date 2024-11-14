@@ -12,6 +12,7 @@ Metadata:
         - DefaultCEMinvCpus
         - DefaultCEMaxvCpus
         - BaseName
+        - SshKeyName
     ParameterLabels:
       VpcId:
         default: VPC ID
@@ -23,6 +24,8 @@ Metadata:
         default: Default Queue Max vCPU count
       BaseName:
         default: Base Name
+      SshKeyName:
+        default: 'SshKeyName'
 
 Parameters:
   VpcId:
@@ -39,12 +42,19 @@ Parameters:
   DefaultCEMaxvCpus:
     Type: Number
     Description: Maximum number of CPUs in the default compute environment. Should be >= than MinCpus
-    Default: 100
+    Default: 1000
     MinValue: 0
   BaseName:
     Type: String
     Description: Name used for the different components
     Default: nextflow
+  spotIamFleetRole:
+    Type: String
+    Description: ARN of the spot IAM Fleet Role
+    Default: empty
+  SshKeyName:
+    Type: String
+    Description: Name of the SSH key Pair to use
 
 Resources:
   GenomicsBatchSecurityGroup:
@@ -82,12 +92,13 @@ Resources:
     Type: AWS::Batch::ComputeEnvironment
     Properties:
       ComputeEnvironmentName: !Sub
-        - !Sub ${BaseName}-compute-environment
+        - ${BaseName}-compute-environment
         - StackGuid: !Select [ 2, !Split [ "/", !Ref "AWS::StackId" ]]
       ServiceRole: !Ref BatchServiceRole
       Type: MANAGED
       State: ENABLED
       ComputeResources:
+        Ec2KeyPair: !Ref SshKeyName
         InstanceRole: !GetAtt ECSInstanceProfile.Arn
         InstanceTypes:
           - optimal
@@ -96,7 +107,8 @@ Resources:
         SecurityGroupIds:
           - !Ref GenomicsBatchSecurityGroup
         Subnets: !Ref SubnetIds
-        Type: EC2
+        Type: EC2 # SPOT
+        # spotIamFleetRole: spotIamFleetRole
         Tags:
           Name: !Sub
             - ${BaseName}-batch-ondemand-worker-${StackGuid}
@@ -106,7 +118,7 @@ Resources:
     Type: AWS::Batch::JobQueue
     Properties:
       JobQueueName: !Sub
-        - !Sub ${BaseName}-job-queue
+        - ${BaseName}-job-queue
         - StackGuid: !Select [ 2, !Split [ "/", !Ref "AWS::StackId" ]]
       Priority: 10
       State: ENABLED
@@ -141,6 +153,7 @@ Resources:
       - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
       - arn:aws:iam::aws:policy/AmazonS3FullAccess
       - arn:aws:iam::aws:policy/AWSBatchFullAccess
+      - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
   ECSInstanceProfile:
     Type: AWS::IAM::InstanceProfile
